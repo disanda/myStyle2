@@ -1,6 +1,6 @@
 
 
-batch_size : 25
+batch_size : 24
 data_resize : True
 data_dir: '/_yucheng/dataSet/CelebAMask-HQ/CelebAMask-HQ/CelebA-HQ-img'
 tensorboard_log_dir : './runs/stylegan2_512x512'
