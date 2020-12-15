@@ -6,7 +6,7 @@ args = CN()
 
 args.channels= [32, 64, 128, 256, 512, 512, 512, 512] # 9 -> 1024
 args.gpu= [0]
-args.output= 'output'  # Output directory for model weights.
+args.output= './output'  # Output directory for model weights.
 
 
 # model

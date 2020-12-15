@@ -2,9 +2,9 @@
 
 data_resize : True
 data_dir: '/_yucheng/dataSet/CelebAMask-HQ/CelebAMask-HQ/CelebA-HQ-img'
-tensorboard_log_dir : 'runs/stylegan2_512x512'
+tensorboard_log_dir : './runs/stylegan2_512x512'
 tensorboard_image_interval : 5
-checkpoint_dir : 'checkpoints/stylegan2_512x512'
+checkpoint_dir : './checkpoints/stylegan2_512x512'
 checkpoint_interval : 10000
 
 
