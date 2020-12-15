@@ -545,27 +545,6 @@ class Trainer:
             'can be used to generate images.'
         return utils.tensor_to_PIL(generated, pixel_min=pixel_min, pixel_max=pixel_max)
 
-    def log_images_tensorboard(self, images, name, resize=256):
-        """
-        Log a list of images to tensorboard by first turning
-        them into a grid. Can not be performed if rank > 0
-        or tensorboard_log_dir was not given at construction.
-        Arguments:
-            images (list): List of PIL images.
-            name (str): The name to log images for.
-            resize (int, tuple): The height and width to use for
-                each image in the grid. Default value is 256.
-        """
-        assert self.tb_writer is not None, \
-            'No tensorboard log dir was specified ' + \
-            'when constructing this object.'
-        #image = utils.stack_images_PIL(images, individual_img_size=resize)
-        #image = torchvision.transforms.ToTensor()(image)
-        #self.tb_writer.add_image(name, image, self.seen)
-        image2 = utils.stack_images_PIL(images)
-        print(len(images))
-        image2.save('./runs/%d.png'%(self.seen))
-
     def add_tensorboard_image_logging(self, 
                                       name, 
                                       interval,
@@ -577,16 +556,6 @@ class Trainer:
                                       label=None,
                                       pixel_min=-1,
                                       pixel_max=1):
-        """
-        Set up tensorboard logging of generated images to be performed
-        at a certain training interval. If distributed training is set up
-        and this object does not have the rank 0, no logging will be performed
-        by this object.
-        All arguments except the ones mentioned below have their description
-        in the docstring of `generate_images()` and `log_images_tensorboard()`.
-        Arguments:
-            interval (int): The interval at which to log generated images.
-        """
         def callback(seen):
             if seen % interval == 0:
                 images = self.generate_images(
@@ -598,7 +567,11 @@ class Trainer:
                     pixel_min=pixel_min,
                     pixel_max=pixel_max
                 )
-                self.log_images_tensorboard(images=images, name=name, resize=resize)
+                image = utils.stack_images_PIL(images, individual_img_size=resize)
+                image = torchvision.transforms.ToTensor()(image)
+                self.tb_writer.add_image(name, image, self.seen)
+                image2 = utils.stack_images_PIL(images)
+                image2.save('./runs/%d.png'%(self.seen))
         self.callbacks.append(callback)
 
     def save_checkpoint(self, dir_path):

@@ -207,10 +207,10 @@ def get_trainer(args):
                 name += '/trunc_{:.1f}'.format(trunc)
                 trainer.add_tensorboard_image_logging(
                     name=name,
-                    num_images=8,
+                    num_images=6,
                     interval=args.tensorboard_image_interval,
                     resize=args.tensorboard_image_size,
-                    seed=1234567890 if static else None,
+                    seed=1 if static else None,
                     truncation_psi=trunc,
                     pixel_min=args.pixel_min,
                     pixel_max=args.pixel_max
