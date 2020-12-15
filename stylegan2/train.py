@@ -362,7 +362,7 @@ class Trainer:
                         self.G_opt.step()
                         self.G_opt.zero_grad()
                     G_reg_loss = 0
-                    latents, latent_labels = self.prior_generator(batch_size=self.G_reg_device_batch_size, multi_latent_prob=self.style_mix_prob)
+                    latents, latent_labels = self.prior_generator(batch_size=batch_size, multi_latent_prob=self.style_mix_prob)
                     _, reg_loss = self.G_reg(G=self.G, latents=latents, latent_labels=latent_labels)
                     G_reg_loss += self._backward(reg_loss, self.G_opt, mul=self.G_reg_interval or 1)
                 self.G_opt.step() # Update moving average of weights after, each G training subiteration
