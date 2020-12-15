@@ -235,25 +235,24 @@ def get_trainer(args):
 #----------------------------------------------------------------------------
 
 def run(args):
-    if not args.rank:
-        if not (args.checkpoint_dir or args.output):
+    if not (args.checkpoint_dir or args.output):
             warnings.warn(
                 'Neither an output path or checkpoint dir has been ' + \
                 'given. Weights from this training run will never ' + \
                 'be saved.'
             )
-        if args.output:
+    if args.output:
             assert os.path.isdir(args.output) or not os.path.splitext(args.output)[-1], \
                 '--output argument should specify a directory, not a file.'
     trainer = get_trainer(args)
     trainer.train(iterations=args.iterations)
-    if not args.rank and args.output:
+    if not args.output:
         print('Saving models to {}'.format(args.output))
         if not os.path.exists(args.output):
             os.makedirs(args.output)
         for model_name in ['G', 'D', 'Gs']:
-            getattr(trainer, model_name).save(
-                os.path.join(args.output_dir, model_name + '.pth'))
+            getattr(trainer, model_name).save(os.path.join(args.output_dir, model_name + '.pth'))
+
 
 #----------------------------------------------------------------------------
 
