@@ -559,12 +559,12 @@ class Trainer:
         assert self.tb_writer is not None, \
             'No tensorboard log dir was specified ' + \
             'when constructing this object.'
-        image = utils.stack_images_PIL(images, individual_img_size=resize)
-        image = torchvision.transforms.ToTensor()(image)
-        self.tb_writer.add_image(name, image, self.seen)
+        #image = utils.stack_images_PIL(images, individual_img_size=resize)
+        #image = torchvision.transforms.ToTensor()(image)
+        #self.tb_writer.add_image(name, image, self.seen)
         image2 = utils.stack_images_PIL(images)
         print(len(images))
-        image2.save('./runs')
+        image2.save('./runs/%d.png'%(self.seen))
 
     def add_tensorboard_image_logging(self, 
                                       name, 
