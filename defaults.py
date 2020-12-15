@@ -3,7 +3,7 @@ from yacs.config import CfgNode as CN
 args = CN()
 
 
-args.channels= [32, 64, 128, 256, 512, 512, 512, 512] # 9 -> 1024
+args.channels= [32, 64, 128, 256, 512, 512, 512, 512] # 9-> 1024  8-> 512
 args.output= './output'  # Output directory for model weights.
 args.device= 'cuda'
 

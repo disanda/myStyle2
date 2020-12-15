@@ -562,9 +562,9 @@ class Trainer:
         image = utils.stack_images_PIL(images, individual_img_size=resize)
         image = torchvision.transforms.ToTensor()(image)
         self.tb_writer.add_image(name, image, self.seen)
-        image2 = utils.stack_images_PIL(images, individual_img_size=resize)
-        print(image2.shape)
+        image2 = utils.stack_images_PIL(images)
         print(len(images))
+        image2.save('./runs')
 
     def add_tensorboard_image_logging(self, 
                                       name, 
