@@ -5,10 +5,6 @@ args = CN()
 
 
 args.channels= [32, 64, 128, 256, 512, 512, 512, 512] # 9 -> 1024
-args.tensorboard_log_dir= 'runs/stylegan2_512x512'
-args.tensorboard_image_interval= 500
-args.checkpoint_dir= 'checkpoints/stylegan2_512x512'
-args.checkpoint_interval= 10000
 args.gpu= [0]
 args.output= 'output'  # Output directory for model weights.
 
@@ -71,9 +67,6 @@ args.d_iter = 1
 args.iterations = 1000000 
 args.gpu = [] # The cuda device(s) to use. Example= ""--gpu 0 1" will train on GPU 0 and GPU 1. Default= Only use CPU'
 args.batch_size = 32
-args.device_batch_size = 4 # Maximum number of items to fit on single device at a time.
-args.g_reg_batch_size = 16 # Size of each batch used to regularize the generator.
-args.g_reg_device_batch_size= 2 # Maximum number of items to fit on single device when regularizing the generator.
 args.half = False # Use mixed precision training.
 args.resume = False #Resume from the latest saved checkpoint in the checkpoint_dir. This loads all previous training settings except for the dataset options
 
@@ -93,7 +86,7 @@ args.data_workers = 4 # Number of worker processes that handles dataloading.
 
 # Logging options
 args.checkpoint_dir = None
-args.checkpoint_interval = 10000
+args.checkpoint_interval = 5
 args.tensorboard_log_dir = None # type= str
 args.tensorboard_image_interval = None # type= int
 args.tensorboard_image_size = 256 # Size of images logged to tensorboard.

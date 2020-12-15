@@ -146,15 +146,6 @@ class Trainer:
         seen (int): The number of previously trained iterations. Used for logging.
             Default value is 0.
         half (bool): Use mixed precision training. Default value is False.
-        rank (int, optional): If set, use distributed training. Expects that
-            this object has been constructed with the same arguments except
-            for `rank` in different processes.
-        world_size (int, optional): If using distributed training, this specifies
-            the number of nodes in the training.
-        master_addr (str): The master address for distributed training.
-            Default value is '127.0.0.1'.
-        master_port (str): The master port for distributed training.
-            Default value is '23456'.
     """
 
     def __init__(self,
@@ -167,7 +158,6 @@ class Trainer:
                  Gs_beta=0.5 ** (32 / 10000),
                  Gs_device=None,
                  batch_size=32,
-                 device_batch_size=4,
                  label_size=0,
                  data_workers=4,
                  G_loss='logistic_ns',
@@ -176,8 +166,6 @@ class Trainer:
                  G_reg_interval=4,
                  G_opt_class='Adam',
                  G_opt_kwargs={'lr': 2e-3, 'betas': (0, 0.99)},
-                 G_reg_batch_size=None,
-                 G_reg_device_batch_size=None,
                  D_reg='r1:10',
                  D_reg_interval=16,
                  D_opt_class='Adam',
@@ -188,88 +176,43 @@ class Trainer:
                  pl_avg=0.,
                  tensorboard_log_dir=None,
                  checkpoint_dir=None,
-                 checkpoint_interval=10000,
+                 checkpoint_interval=10,
                  seen=0,
-                 half=False,
-                 rank=None,
-                 world_size=None,):
-        assert not isinstance(G, nn.parallel.DistributedDataParallel) and \
-               not isinstance(D, nn.parallel.DistributedDataParallel), \
-               'Encountered a model wrapped in `DistributedDataParallel`. ' + \
-               'Distributed parallelism is handled by this class and can ' + \
-               'not be initialized before.'
-        # We store the training settings in a dict that can be saved as a json file.
-        kwargs = locals()
-        # First we remove the arguments that can not be turned into json.
-        kwargs.pop('self')
+                 half=False,):
+        kwargs = locals() # We store the training settings in a dict that can be saved as a json file.
+        kwargs.pop('self') # First we remove the arguments that can not be turned into json.
         kwargs.pop('G')
         kwargs.pop('D')
         kwargs.pop('Gs')
-        kwargs.pop('dataset')
-        # Some arguments may have to be turned into strings to be compatible with json.
-        kwargs.update(pl_avg=float(pl_avg))
+        kwargs.pop('dataset') 
+        kwargs.update(pl_avg=float(pl_avg)) # Some arguments may have to be turned into strings to be compatible with json.
         if isinstance(device, torch.device):
             kwargs.update(device=str(device))
         if isinstance(Gs_device, torch.device):
             kwargs.update(device=str(Gs_device))
         self.kwargs = kwargs
 
-        if device or device == 0:
-            if isinstance(device, (tuple, list)):
-                self.device = torch.device(device[0])
-            else:
-                self.device = torch.device(device)
-        else:
-            self.device = torch.device('cpu')
-        if self.device.index is not None:
+        if device:
+            self.device = torch.device(device)
             torch.cuda.set_device(self.device.index)
         else:
-            assert not half, 'Mixed precision training only available ' + \
-                'for CUDA devices.'
+            self.device = torch.device('cpu')
+
         # Set up the models
         self.G = G.train().to(self.device)
         self.D = D.train().to(self.device)
-        if isinstance(device, (tuple, list)) and len(device) > 1:
-            assert all(isinstance(dev, int) for dev in device), \
-                'Multiple devices have to be specified as a list ' + \
-                'or tuple of integers corresponding to device indices.'
-            # TODO: Look into bug with torch.autograd.grad and nn.DataParallel
-            # In the meanwhile just prohibit its use together.
-            assert G_reg is None and D_reg is None, 'Regularization ' + \
-                'currently not supported for multi-gpu training in single process. ' + \
-                'Please use distributed training with one device per process instead.'
-
-            device_batch_size *= len(device)
-            def to_data_parallel(model):
-                if not isinstance(model, nn.DataParallel):
-                    return nn.DataParallel(model, device_ids=device)
-                return model
-            self.G = to_data_parallel(self.G)
-            self.D = to_data_parallel(self.D)
-
-        # Default generator reg batch size is the global batch size
-        # unless it has been specified otherwise.
-        G_reg_batch_size = G_reg_batch_size or batch_size
-        G_reg_device_batch_size = G_reg_device_batch_size or device_batch_size
-
-        self.rank = None
-        self.world_size = 1
 
         # Set up variable to keep track of moving average of path lengths
         self.pl_avg = torch.tensor(pl_avg, dtype=torch.float16 if half else torch.float32, device=self.device)
 
         # Set up moving average of generator
-        # Only for non-distributed training or
-        # if rank is 0
-        # Values for `rank`: None -> not distributed, 0 -> distributed and 'main' node
         self.Gs = Gs
         if not isinstance(Gs, utils.MovingAverageModule):
                 self.Gs = utils.MovingAverageModule(
                     from_module=self.G,
                     to_module=Gs,
                     param_beta=Gs_beta,
-                    device=self.device if Gs_device is None else Gs_device
-                )
+                    device=self.device if Gs_device is None else Gs_device)
 
         # Set up loss and regularization functions
         self.G_loss = get_loss_fn('G', G_loss)
@@ -287,17 +230,15 @@ class Trainer:
 
         # Set up mixed precision training
         if half:
-            assert 'apex' in sys.modules, 'Can not run mixed precision ' + \
-                'training (`half=True`) without the apex module.'
-            (self.G, self.D), (self.G_opt, self.D_opt) = amp.initialize(
-                [self.G, self.D], [self.G_opt, self.D_opt], opt_level='O1')
+            assert 'apex' in sys.modules, 'Can not run mixed precision training (`half=True`) without the apex module.'
+            (self.G, self.D), (self.G_opt, self.D_opt) = amp.initialize([self.G, self.D], [self.G_opt, self.D_opt], opt_level='O1')
         self.half = half
 
         # Data
         sampler = None
         self.dataloader = torch.utils.data.DataLoader(
             dataset,
-            batch_size=device_batch_size,
+            batch_size=batch_size,
             num_workers=data_workers,
             shuffle=sampler is None,
             pin_memory=self.device.index is not None,
@@ -308,20 +249,12 @@ class Trainer:
         self.prior_generator = utils.PriorGenerator(
             latent_size=latent_size,
             label_size=label_size,
-            batch_size=device_batch_size,
+            batch_size=batch_size,
             device=self.device
         )
-        assert batch_size % device_batch_size == 0, \
-            'Batch size has to be evenly divisible by the product of ' + 'device batch size and world size.'
-        self.subdivisions = batch_size // device_batch_size
-        assert G_reg_batch_size % G_reg_device_batch_size == 0, \
-            'G reg batch size has to be evenly divisible by the product of ' + \
-            'G reg device batch size and world size.'
-        self.G_reg_subdivisions = G_reg_batch_size // G_reg_device_batch_size
-        self.G_reg_device_batch_size = G_reg_device_batch_size
 
         self.tb_writer = None
-        if tensorboard_log_dir and not self.rank:
+        if tensorboard_log_dir:
             self.tb_writer = torch.utils.tensorboard.SummaryWriter(tensorboard_log_dir)
 
         self.label_size = label_size
@@ -332,14 +265,7 @@ class Trainer:
         self.metrics = {}
         self.callbacks = []
 
-    def _get_batch(self):
-        """
-        Fetch a batch and its labels. If no labels are
-        available the returned labels will be `None`.
-        Returns:
-            data
-            labels
-        """
+    def _get_batch(self): #Fetch a batch and its labels. If no labels are available the returned labels will be `None`. 
         if self.dataloader_iter is None:
             self.dataloader_iter = iter(self.dataloader)
         try:
@@ -383,17 +309,13 @@ class Trainer:
         """
         if loss is None:
             return 0
-        mul /= subdivisions or self.subdivisions
-        mul /= self.world_size or 1
-        if mul != 1:
-            loss *= mul
         if self.half:
             with amp.scale_loss(loss, opt) as scaled_loss:
                 scaled_loss.backward()
         else:
             loss.backward()
         #get the scalar only
-        return loss.item() * (self.world_size or 1)
+        return loss.item()
 
     def train(self, iterations, callbacks=None, verbose=True):
         """
@@ -404,15 +326,11 @@ class Trainer:
                 or more callbacks to call at the end of each
                 iteration. The function is given the total
                 number of batches that have been processed since
-                this trainer object was initialized (not reset
-                when loading a saved checkpoint).
+                this trainer object was initialized (not reset when loading a saved checkpoint).
                 Default value is None (unused).
-            verbose (bool): Write progress to stdout.
-                Default value is True.
+            verbose (bool): Write progress to stdout. Default value is True.
         """
         evaluated_metrics = {}
-        if self.rank:
-            verbose=False
         if verbose:
             progress = utils.ProgressWriter(iterations)
             value_tracker = utils.ValueTracker()
@@ -427,115 +345,66 @@ class Trainer:
                 D_reg = self.seen % self.D_reg_interval == 0
 
             # -----| Train G |----- #
-
-            # Disable gradients for D while training G
+            self.G.requires_grad_(True) # Disable gradients for D while training G, enable grads for G
             self.D.requires_grad_(False)
 
             for _ in range(self.G_iter):
                 self.G_opt.zero_grad()
-
                 G_loss = 0
-                for i in range(self.subdivisions):
-                    latents, latent_labels = self.prior_generator(
-                        multi_latent_prob=self.style_mix_prob)
-                    loss, _ = self.G_loss(
-                        G=self.G,
-                        D=self.D,
-                        latents=latents,
-                        latent_labels=latent_labels
-                    )
-                    G_loss += self._backward(loss, self.G_opt)
+                latents, latent_labels = self.prior_generator(multi_latent_prob=self.style_mix_prob)
+                loss, _ = self.G_loss(G=self.G, D=self.D, latents=latents, latent_labels=latent_labels)
+                G_loss += self._backward(loss, self.G_opt)
 
                 if G_reg:
                     if self.G_reg_interval:
-                        # For lazy regularization, even if the interval
-                        # is set to 1, the optimization step is taken
+                        # For lazy regularization, even if the interval is set to 1, the optimization step is taken
                         # before the gradients of the regularization is gathered.
                         self.G_opt.step()
                         self.G_opt.zero_grad()
                     G_reg_loss = 0
-                    # Pathreg is expensive to compute which
-                    # is why G regularization has its own settings
-                    # for subdivisions and batch size.
-                    for i in range(self.G_reg_subdivisions):
-                        latents, latent_labels = self.prior_generator(
-                            batch_size=self.G_reg_device_batch_size,
-                            multi_latent_prob=self.style_mix_prob
-                        )
-                        _, reg_loss = self.G_reg(
-                            G=self.G,
-                            latents=latents,
-                            latent_labels=latent_labels
-                        )
-                        G_reg_loss += self._backward(
-                            reg_loss,
-                            self.G_opt, mul=self.G_reg_interval or 1,
-                            subdivisions=self.G_reg_subdivisions
-                        )
-                self.G_opt.step()
-                # Update moving average of weights after
-                # each G training subiteration
+                    latents, latent_labels = self.prior_generator(batch_size=self.G_reg_device_batch_size, multi_latent_prob=self.style_mix_prob)
+                    _, reg_loss = self.G_reg(G=self.G, latents=latents, latent_labels=latent_labels)
+                    G_reg_loss += self._backward(reg_loss, self.G_opt, mul=self.G_reg_interval or 1)
+                self.G_opt.step() # Update moving average of weights after, each G training subiteration
                 if self.Gs is not None:
                     self.Gs.update()
 
-            # Re-enable gradients for D
+            # -----| Train D |----- #Re-enable gradients for D && Disable gradients for G while training D
             self.D.requires_grad_(True)
-
-            # -----| Train D |----- #
-
-            # Disable gradients for G while training D
             self.G.requires_grad_(False)
 
             for _ in range(self.D_iter):
                 self.D_opt.zero_grad()
 
                 D_loss = 0
-                for i in range(self.subdivisions):
-                    latents, latent_labels = self.prior_generator(
-                        multi_latent_prob=self.style_mix_prob)
-                    reals, real_labels = self._get_batch()
-                    loss, _ = self.D_loss(
-                        G=self.G,
-                        D=self.D,
-                        latents=latents,
-                        latent_labels=latent_labels,
-                        reals=reals,
-                        real_labels=real_labels
-                    )
-                    D_loss += self._backward(loss, self.D_opt)
+                latents, latent_labels = self.prior_generator(multi_latent_prob=self.style_mix_prob)
+                reals, real_labels = self._get_batch()
+                loss, _ = self.D_loss(G=self.G, D=self.D, latents=latents, latent_labels=latent_labels, reals=reals, real_labels=real_labels)
+                D_loss += self._backward(loss, self.D_opt)
 
                 if D_reg:
                     if self.D_reg_interval:
-                        # For lazy regularization, even if the interval
-                        # is set to 1, the optimization step is taken
+                        # For lazy regularization, even if the interval is set to 1, the optimization step is taken
                         # before the gradients of the regularization is gathered.
                         self.D_opt.step()
                         self.D_opt.zero_grad()
                     D_reg_loss = 0
-                    for i in range(self.subdivisions):
-                        latents, latent_labels = self.prior_generator(
-                            multi_latent_prob=self.style_mix_prob)
-                        reals, real_labels = self._get_batch()
-                        _, reg_loss = self.D_reg(
+                    latents, latent_labels = self.prior_generator(multi_latent_prob=self.style_mix_prob)
+                    reals, real_labels = self._get_batch()
+                    _, reg_loss = self.D_reg(
                             G=self.G,
                             D=self.D,
                             latents=latents,
                             latent_labels=latent_labels,
                             reals=reals,
-                            real_labels=real_labels
-                        )
-                        D_reg_loss += self._backward(
-                            reg_loss, self.D_opt, mul=self.D_reg_interval or 1)
+                            real_labels=real_labels)
+                    D_reg_loss += self._backward(reg_loss, self.D_opt, mul=self.D_reg_interval or 1)
                 self.D_opt.step()
-
-            # Re-enable grads for G
-            self.G.requires_grad_(True)
 
             if self.tb_writer is not None or verbose:
                 # In case verbose is true and tensorboard logging enabled
                 # we calculate grad norm here to only do it once as well
-                # as making sure we do it before any metrics that may
-                # possibly zero the grads.
+                # as making sure we do it before any metrics that may possibly zero the grads.
                 G_grad_norm = utils.get_grad_norm_from_optimizer(self.G_opt)
                 D_grad_norm = utils.get_grad_norm_from_optimizer(self.D_opt)
 
@@ -594,14 +463,10 @@ class Trainer:
             # clear cache
             torch.cuda.empty_cache()
             # Handle checkpointing
-            if not self.rank and self.checkpoint_dir and self.checkpoint_interval:
+            if self.checkpoint_dir and self.checkpoint_interval:
                 if self.seen % self.checkpoint_interval == 0:
-                    checkpoint_path = os.path.join(
-                        self.checkpoint_dir,
-                        '{}_{}'.format(self.seen, time.strftime('%Y-%m-%d_%H-%M-%S'))
-                    )
+                    checkpoint_path = os.path.join(self.checkpoint_dir,'{}_{}'.format(self.seen, time.strftime('%Y-%m-%d_%H-%M-%S')))
                     self.save_checkpoint(checkpoint_path)
-
         if verbose:
             progress.close()
 
@@ -705,8 +570,8 @@ class Trainer:
         image = torchvision.transforms.ToTensor()(image)
         self.tb_writer.add_image(name, image, self.seen)
 
-    def add_tensorboard_image_logging(self,
-                                      name,
+    def add_tensorboard_image_logging(self, 
+                                      name, 
                                       interval,
                                       num_images,
                                       resize=256,
@@ -737,18 +602,13 @@ class Trainer:
                     pixel_min=pixel_min,
                     pixel_max=pixel_max
                 )
-                self.log_images_tensorboard(
-                    images=images,
-                    name=name,
-                    resize=resize
-                )
+                self.log_images_tensorboard(images=images, name=name, resize=resize)
         self.callbacks.append(callback)
 
     def save_checkpoint(self, dir_path):
         """
         Save the current state of this trainer as a checkpoint.
-        NOTE: The dataset can not be serialized and saved so this
-            has to be reconstructed and given when loading this checkpoint.
+        NOTE: The dataset can not be serialized and saved so this has to be reconstructed and given when loading this checkpoint.
         Arguments:
             dir_path (str): The checkpoint path.
         """
@@ -758,10 +618,7 @@ class Trainer:
             assert os.path.isdir(dir_path), '`dir_path` points to a file.'
         kwargs = self.kwargs.copy()
         # Update arguments that may have changed since construction
-        kwargs.update(
-            seen=self.seen,
-            pl_avg=float(self.pl_avg)
-        )
+        kwargs.update(seen=self.seen,pl_avg=float(self.pl_avg))
         with open(os.path.join(dir_path, 'kwargs.json'), 'w') as fp:
             json.dump(kwargs, fp)
         torch.save(self.G_opt.state_dict(), os.path.join(dir_path, 'G_opt.pth'))
@@ -811,7 +668,6 @@ class Trainer:
             state_dict = torch.load(fpath, map_location=device)
             getattr(obj, name).load_state_dict(state_dict)
         return obj
-
 
 #----------------------------------------------------------------------------
 # Checkpoint helper functions
@@ -864,7 +720,6 @@ def _find_checkpoint(dir_path):
     checkpoint_names = sorted(sorted(checkpoint_names, key=get_iteration), key=get_timestamp)
     return os.path.join(dir_path, checkpoint_names[-1])
 
-
 #----------------------------------------------------------------------------
 # Reg and loss function fetchers
 
@@ -882,10 +737,8 @@ def build_opt(net, opt_class, opt_kwargs, reg, reg_interval):
         opt_class = getattr(torch.optim, opt_class.title())
     return opt_class(net.parameters(), **opt_kwargs)
 
-
 #----------------------------------------------------------------------------
 # Reg and loss function fetchers
-
 
 _LOSS_FNS = {
     'G': {
@@ -909,17 +762,11 @@ def get_loss_fn(net, loss):
             return _LOSS_FNS[net][name]
     raise ValueError('Unknow {} loss {}'.format(net, loss))
 
-
 _REG_FNS = {
-    'G': {
-        'pathreg': loss_fns.G_pathreg
-    },
-    'D': {
-        'r1': loss_fns.D_r1,
-        'r2': loss_fns.D_r2,
-        'gp': loss_fns.D_gp,
+    'G': {'pathreg': loss_fns.G_pathreg},
+    'D': { 'r1': loss_fns.D_r1, 'r2': loss_fns.D_r2, 'gp': loss_fns.D_gp,}
     }
-}
+
 def get_reg_fn(net, reg, **kwargs):
     if reg is None:
         return None
