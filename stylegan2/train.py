@@ -223,7 +223,7 @@ class Trainer:
         self.D_reg_interval = D_reg_interval
         self.G_iter = G_iter
         self.D_iter = D_iter
-
+        self.batch_size =batch_size
         # Set up optimizers (adjust hyperparameters if lazy regularization is active)
         self.G_opt = build_opt(self.G, G_opt_class, G_opt_kwargs, self.G_reg, self.G_reg_interval)
         self.D_opt = build_opt(self.D, D_opt_class, D_opt_kwargs, self.D_reg, self.D_reg_interval)
@@ -238,7 +238,7 @@ class Trainer:
         sampler = None
         self.dataloader = torch.utils.data.DataLoader(
             dataset,
-            batch_size=batch_size,
+            batch_size=self.batch_size,
             num_workers=data_workers,
             shuffle=sampler is None,
             pin_memory=self.device.index is not None,
@@ -249,7 +249,7 @@ class Trainer:
         self.prior_generator = utils.PriorGenerator(
             latent_size=latent_size,
             label_size=label_size,
-            batch_size=batch_size,
+            batch_size=self.batch_size,
             device=self.device
         )
 
@@ -362,7 +362,7 @@ class Trainer:
                         self.G_opt.step()
                         self.G_opt.zero_grad()
                     G_reg_loss = 0
-                    latents, latent_labels = self.prior_generator(batch_size=batch_size, multi_latent_prob=self.style_mix_prob)
+                    latents, latent_labels = self.prior_generator(batch_size=self.batch_size, multi_latent_prob=self.style_mix_prob)
                     _, reg_loss = self.G_reg(G=self.G, latents=latents, latent_labels=latent_labels)
                     G_reg_loss += self._backward(reg_loss, self.G_opt, mul=self.G_reg_interval or 1)
                 self.G_opt.step() # Update moving average of weights after, each G training subiteration
