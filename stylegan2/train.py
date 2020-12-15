@@ -178,6 +178,7 @@ class Trainer:
                  checkpoint_interval=10,
                  seen=0,
                  half=False,):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         kwargs = locals() # We store the training settings in a dict that can be saved as a json file.
         kwargs.pop('self') # First we remove the arguments that can not be turned into json.
         kwargs.pop('G')
@@ -185,12 +186,10 @@ class Trainer:
         kwargs.pop('Gs')
         kwargs.pop('dataset') 
         kwargs.update(pl_avg=float(pl_avg)) # Some arguments may have to be turned into strings to be compatible with json.
-        if isinstance(device, torch.device):
-            kwargs.update(device=str(device))
+        kwargs.update(device=str(self.device))
         if isinstance(Gs_device, torch.device):
             kwargs.update(device=str(Gs_device))
         self.kwargs = kwargs
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Set up the models
         self.G = G.train().to(self.device)
