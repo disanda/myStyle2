@@ -9,7 +9,6 @@ args.tensorboard_log_dir= 'runs/stylegan2_512x512'
 args.tensorboard_image_interval= 500
 args.checkpoint_dir= 'checkpoints/stylegan2_512x512'
 args.checkpoint_interval= 10000
-args.data_dir= '_yucheng/dataSet/CelebAMask-HQ/CelebAMask-HQ/CelebA-HQ-img'
 args.gpu= [0]
 args.output= 'output'  # Output directory for model weights.
 

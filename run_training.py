@@ -256,6 +256,6 @@ def run(args):
 if __name__ == '__main__':
     config_file="./configs/my_settings.yaml"
     cfg = get_cfg_defaults()
-    #cfg.merge_from_file(config_file)
+    cfg.merge_from_file(config_file)
     cfg.freeze()
     run(cfg)
