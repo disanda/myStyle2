@@ -153,7 +153,6 @@ class Trainer:
                  D, # D (Discriminator): The discriminator model.
                  latent_size, # latent_size (int): The size of the latent inputs.
                  dataset,
-                 device,
                  Gs=None,
                  Gs_beta=0.5 ** (32 / 10000),
                  Gs_device=None,
@@ -191,7 +190,7 @@ class Trainer:
         if isinstance(Gs_device, torch.device):
             kwargs.update(device=str(Gs_device))
         self.kwargs = kwargs
-        self.device = device
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Set up the models
         self.G = G.train().to(self.device)
@@ -646,7 +645,7 @@ class Trainer:
             loaded_kwargs = json.load(fp)
         loaded_kwargs.update(**kwargs)
         device = torch.device('cpu')
-        if isinstance(loaded_kwargs['device'], (list, tuple)):
+        if loaded_kwargs['device']:
             device = torch.device(loaded_kwargs['device'][0])
         for name in ['G', 'D']:
             fpath = os.path.join(checkpoint_path, name + '.pth')

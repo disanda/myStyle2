@@ -1,14 +1,11 @@
 from yacs.config import CfgNode as CN
-import torch
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 args = CN()
 
 
 args.channels= [32, 64, 128, 256, 512, 512, 512, 512] # 9 -> 1024
-args.device= device
 args.output= './output'  # Output directory for model weights.
-
+args.device= 'cuda'
 
 # model
 args.latent = 512 # Size of the prior (noise vector)

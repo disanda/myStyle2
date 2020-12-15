@@ -122,7 +122,6 @@ def get_trainer(args):
             D=D,
             latent_size=args.latent,
             dataset=dataset,
-            device=args.device,
             batch_size=args.batch_size,
             label_size=args.label,
             data_workers=args.data_workers,
