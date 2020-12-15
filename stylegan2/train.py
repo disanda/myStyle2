@@ -595,6 +595,7 @@ class Trainer:
                     pixel_min=pixel_min,
                     pixel_max=pixel_max
                 )
+                print(images.shape)
                 self.log_images_tensorboard(images=images, name=name, resize=resize)
         self.callbacks.append(callback)
 
