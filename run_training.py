@@ -113,10 +113,6 @@ def get_trainer(args):
             args.checkpoint_dir,
             dataset,
             device=args.gpu,
-            rank=args.rank,
-            world_size=args.world_size,
-            master_addr=args.master_addr,
-            master_port=args.master_port,
             tensorboard_log_dir=args.tensorboard_log_dir
         )
     else:
@@ -148,9 +144,6 @@ def get_trainer(args):
             checkpoint_dir=args.checkpoint_dir,
             checkpoint_interval=args.checkpoint_interval,
             half=args.half,
-            world_size=args.world_size,
-            master_addr=args.master_addr,
-            master_port=args.master_port
         )
     if args.fid_interval:
         fid_model = inception.InceptionV3FeatureExtractor(
