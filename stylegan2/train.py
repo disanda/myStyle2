@@ -327,7 +327,7 @@ class Trainer:
         if verbose:
             progress = utils.ProgressWriter(iterations)
             value_tracker = utils.ValueTracker()
-        for _ in range(iterations):
+        for i in range(iterations):
             # Figure out if G and/or D be
             # regularized this iteration
             G_reg = self.G_reg is not None
@@ -562,6 +562,9 @@ class Trainer:
         image = utils.stack_images_PIL(images, individual_img_size=resize)
         image = torchvision.transforms.ToTensor()(image)
         self.tb_writer.add_image(name, image, self.seen)
+        image2 = utils.stack_images_PIL(images, individual_img_size=resize)
+        print(image2.shape)
+        print(len(images))
 
     def add_tensorboard_image_logging(self, 
                                       name, 
@@ -595,7 +598,6 @@ class Trainer:
                     pixel_min=pixel_min,
                     pixel_max=pixel_max
                 )
-                print(images.shape)
                 self.log_images_tensorboard(images=images, name=name, resize=resize)
         self.callbacks.append(callback)
 
