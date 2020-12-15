@@ -1,0 +1,109 @@
+channels: [32, 64, 128, 256, 512, 512, 512, 512] # 9 -> 1024
+tensorboard_log_dir: 'runs/stylegan2_512x512'
+tensorboard_image_interval: 500
+checkpoint_dir: 'checkpoints/stylegan2_512x512'
+checkpoint_interval: 10000
+data_dir: /path/to/dataset/images512x512/
+gpu: [0, 1, 2, 3]
+output: 'output'  # Output directory for model weights.
+
+
+# model
+latent : 512 # Size of the prior (noise vector)
+label : 0 # Number of unique labels. Unused if not specified.
+base_shape : (4, 4) # Data shape of first layer in generator or last layer in discriminator.'
+kernel_size : 3
+pad_once : True # Pad filtered convs only once before filter instead of twice.
+pad_mode : 'constant' # adding mode for conv layers
+pad_constant : 0 # Padding constant for conv layers when `pad_mode` is 'constant'
+filter_pad_mode : 'constant' # Padding mode for filter layers 
+filter_pad_constant : 0 # Padding constant for filter layers when `filter_pad_mode` is 'constant'
+filter : [1, 3, 3, 1] # 'Filter to use whenever FIR is applied.'
+weight_scale : True # Use weight scaling for equalized learning rate
+
+# Generator
+g_file : None # Load a generator model from a file instead of constructing a new one. Disabled unless a file is specified.
+g_channels : [] # Instead of the values of "--channels", use these for the generator instead.
+g_skip : True # Use skip connections for the generator.
+g_resnet : False # Use resnet connections for the generator.
+g_conv_block_size : 2 # Number of layers in a conv block in the generator.
+g_normalize : True # Normalize conv features for generator.
+g_fused_conv : True # Fuse conv & upsample into a transposed conv for the generator.
+g_activation : 'leaky:0.2' # The non-linear activaiton function for the generator.
+g_conv_resample_mode : 'FIR' # Resample mode for upsampling conv layers for generator.
+g_skip_resample_mode : 'FIR' # Resample mode for skip connection upsamples for the generator.
+g_lr : 2e-3 # The learning rate for the generator
+g_betas : (0, 0.99) # Beta values for the generator Adam optimizer.
+g_loss : 'logistic_ns' # Loss function for the generator.
+g_reg : 'pathreg:2' # Regularization function for the generator with an optional weight (:?).
+g_reg_interval : 4 # Interval at which to regularize the generator.
+g_iter : 1 # Number of generator iterations per training iteration.
+style_mix : 0.9 # The probability of passing more than one latent to the generator.
+latent_mapping_layers : 8 # The number of layers of the latent mapping network.
+latent_mapping_lr_mul : 0.01 # The learning rate multiplier for the latent mapping network.
+normalize_latent : True # Normalize latent inputs
+modulate_rgb : True #Modulate RGB layers (use style for output layers of generator).
+
+# Discriminator options
+d_file : None
+d_channels : [] 
+d_skip : False 
+d_resnet : True # here D use !
+d_conv_block_size : 2 
+d_fused_conv : True # D no normalize !
+group_size : 4 # Size of the groups in batch std layer.
+d_activation : 'leaky:0.2'
+d_conv_resample_mode : 'FIR'
+d_skip_resample_mode : 'FIR'
+d_lr : 2e-3
+d_betas : (0, 0.99)
+d_loss : 'logistic'
+d_reg : 'r1:10'
+d_reg_interval : 16 # Interval at which to regularize the discriminator.
+d_iter : 1
+
+# Training options
+iterations : 1000000 
+gpu : [] # The cuda device(s) to use. Example: ""--gpu 0 1" will train on GPU 0 and GPU 1. Default: Only use CPU'
+batch_size : 32
+device_batch_size : 4 # Maximum number of items to fit on single device at a time.
+g_reg_batch_size : 16 # Size of each batch used to regularize the generator.
+g_reg_device_batch_size: 2 # Maximum number of items to fit on single device when regularizing the generator.
+half : False # Use mixed precision training.
+resume : False #Resume from the latest saved checkpoint in the checkpoint_dir. This loads all previous training settings except for the dataset options
+
+# Extra metric options
+fid_interval : None # type:int ,If specified, evaluate the FID metric with this interval.
+ppl_interval : None # If specified, evaluate the PPL metric with this interval.
+ppl_ffhq_crop : False # Crop images evaluated for PPL with crop values for FFHQ.
+
+# Data options
+pixel_min : -1 # type : float, Minimum of the value range of pixels in generated images.
+pixel_max : 1 
+data_channels : 3
+data_dir : None
+data_resize : False
+mirror_augment : False # Use random horizontal flipping for data images.
+data_workers : 4 # Number of worker processes that handles dataloading.
+
+# Logging options
+checkpoint_dir : None
+checkpoint_interval : 10000
+tensorboard_log_dir : None # type: str
+tensorboard_image_interval : None # type: int
+tensorboard_image_size : 256 # Size of images logged to tensorboard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
