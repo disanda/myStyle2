@@ -6,6 +6,7 @@ import stylegan2
 from stylegan2 import utils
 from stylegan2.external_models import inception, lpips
 from stylegan2.metrics import fid, ppl
+import argparse
 
 #----------------------------------------------------------------------------
 
@@ -253,7 +254,6 @@ def run(args):
         for model_name in ['G', 'D', 'Gs']:
             getattr(trainer, model_name).save(
                 os.path.join(args.output_dir, model_name + '.pth'))
-
 
 #----------------------------------------------------------------------------
 
