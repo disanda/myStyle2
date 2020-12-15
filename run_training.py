@@ -112,7 +112,7 @@ def get_trainer(args):
         trainer = stylegan2.train.Trainer.load_checkpoint(
             args.checkpoint_dir,
             dataset,
-            device=args.gpu,
+            device=args.device,
             tensorboard_log_dir=args.tensorboard_log_dir
         )
     else:
@@ -122,7 +122,7 @@ def get_trainer(args):
             D=D,
             latent_size=args.latent,
             dataset=dataset,
-            device=args.gpu,
+            device=args.device,
             batch_size=args.batch_size,
             label_size=args.label,
             data_workers=args.data_workers,

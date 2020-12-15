@@ -1,11 +1,12 @@
 from yacs.config import CfgNode as CN
-
+import torch
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 args = CN()
 
 
 args.channels= [32, 64, 128, 256, 512, 512, 512, 512] # 9 -> 1024
-args.gpu= [0]
+args.device= device
 args.output= './output'  # Output directory for model weights.
 
 
@@ -64,8 +65,7 @@ args.d_reg_interval = 16 # Interval at which to regularize the discriminator.
 args.d_iter = 1
 
 # Training options
-args.iterations = 1000000 
-args.gpu = [] # The cuda device(s) to use. Example= ""--gpu 0 1" will train on GPU 0 and GPU 1. Default= Only use CPU'
+args.iterations = 1000000
 args.batch_size = 32
 args.half = False # Use mixed precision training.
 args.resume = False #Resume from the latest saved checkpoint in the checkpoint_dir. This loads all previous training settings except for the dataset options

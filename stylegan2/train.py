@@ -191,12 +191,7 @@ class Trainer:
         if isinstance(Gs_device, torch.device):
             kwargs.update(device=str(Gs_device))
         self.kwargs = kwargs
-
-        if device:
-            self.device = torch.device(device)
-            torch.cuda.set_device(self.device.index)
-        else:
-            self.device = torch.device('cpu')
+        self.device = device
 
         # Set up the models
         self.G = G.train().to(self.device)
@@ -241,7 +236,7 @@ class Trainer:
             batch_size=self.batch_size,
             num_workers=data_workers,
             shuffle=sampler is None,
-            pin_memory=self.device.index is not None,
+            pin_memory=True,
             drop_last=True,
             sampler=sampler
         )
