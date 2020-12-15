@@ -6,16 +6,13 @@ import stylegan2
 from stylegan2 import utils
 from stylegan2.external_models import inception, lpips
 from stylegan2.metrics import fid, ppl
-import argparse
+from defaults import get_cfg_defaults
 
 #----------------------------------------------------------------------------
 
 def get_dataset(args):
     assert args.data_dir, '--data_dir has to be specified.'
-    height, width = [
-        shape * 2 ** (len(args.d_channels or args.channels) - 1)
-        for shape in args.base_shape
-    ]
+    height, width = [shape * 2 ** (len(args.d_channels or args.channels) - 1) for shape in args.base_shape]# 4 * 2**(n-1)
     dataset = utils.ImageFolder(
         args.data_dir,
         mirror=args.mirror_augment,
@@ -257,13 +254,8 @@ def run(args):
 #----------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="My Style")
-    parser.add_argument(
-        "--config-file",
-        default="configs/my_settings.yaml",
-        metavar="FILE",
-        help="path to config file",
-        type=str,
-    )
-    args = parser.parse_args()
-    run(args)
+    config_file="./configs/my_settings.yaml"
+    cfg = get_cfg_defaults()
+    #cfg.merge_from_file(config_file)
+    cfg.freeze()
+    run(cfg)
