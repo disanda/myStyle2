@@ -214,7 +214,6 @@ def _PIL_grayscale_loader(path):
 
 
 class ImageFolder(torchvision.datasets.ImageFolder):
-
     def __init__(self,
                  *args,
                  mirror=False,
@@ -241,8 +240,7 @@ class ImageFolder(torchvision.datasets.ImageFolder):
                 std=[1. / (pixel_max - pixel_min)]
             )
         )
-        transforms.append(ResizeTransform(
-            height=height, width=width, resize=resize, mode=resize_mode))
+        transforms.append(ResizeTransform(height=height, width=width, resize=resize, mode=resize_mode))
         self.transform = torchvision.transforms.Compose(transforms)
 
     def _find_classes(self, *args, **kwargs):
