@@ -148,12 +148,11 @@ def get_trainer(args):
             checkpoint_dir=args.checkpoint_dir,
             checkpoint_interval=args.checkpoint_interval,
             half=args.half,
-            rank=args.rank,
             world_size=args.world_size,
             master_addr=args.master_addr,
             master_port=args.master_port
         )
-    if args.fid_interval and not args.rank:
+    if args.fid_interval:
         fid_model = inception.InceptionV3FeatureExtractor(
             pixel_min=args.pixel_min, pixel_max=args.pixel_max)
         trainer.register_metric(
@@ -179,7 +178,7 @@ def get_trainer(args):
             ),
             interval=args.fid_interval
         )
-    if args.ppl_interval and not args.rank:
+    if args.ppl_interval:
         lpips_model = lpips.LPIPS_VGG16(
             pixel_min=args.pixel_min, pixel_max=args.pixel_max)
         crop = None
