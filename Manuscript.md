@@ -2,7 +2,7 @@
 
 ## Train
 
-python run_training.py my_settings.yaml --gpu 0 --resume
+python run_training.py my_settings.yaml --gpu 0 --resume True
 > --resume will look in the checkpoint directory if we specified one and attempt to load the latest checkpoint before continuing to train. 
 
 ## Generating Images
