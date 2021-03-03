@@ -251,8 +251,7 @@ class ImageFolder(torchvision.datasets.ImageFolder):
         return classes, class_to_idx
 
 
-class PriorGenerator:
-
+class PriorGenerator: #产生潜变量，混合的话按概率会产生两个
     def __init__(self, latent_size, label_size, batch_size, device):
         self.latent_size = latent_size
         self.label_size = label_size
@@ -309,14 +308,9 @@ class MovingAverageModule:
         if to_module is None:
             self.module = from_module.clone().to(device)
         else:
-            assert type(to_module) == type(from_module), \
-                'Mismatch between type of source and target module.'
-            assert set(self._get_named_parameters(to_module).keys()) \
-            == set(self._get_named_parameters(from_module).keys()), \
-                'Mismatch between parameters of source and target module.'
-            assert set(self._get_named_buffers(to_module).keys()) \
-            == set(self._get_named_buffers(from_module).keys()), \
-                'Mismatch between buffers of source and target module.'
+            assert type(to_module) == type(from_module), 'Mismatch between type of source and target module.'
+            assert set(self._get_named_parameters(to_module).keys()) == set(self._get_named_parameters(from_module).keys()), 'Mismatch between parameters of source and target module.'
+            assert set(self._get_named_buffers(to_module).keys()) == set(self._get_named_buffers(from_module).keys()), 'Mismatch between buffers of source and target module.'
             self.module = to_module.to(device)
         self.module.eval().requires_grad_(False)
         self.param_beta = param_beta

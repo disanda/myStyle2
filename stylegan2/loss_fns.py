@@ -20,23 +20,22 @@ def _grad(input, output, retain_graph):
     )
     return grads[0]
 
-
 def _grad_pen(input, output, gamma, constraint=1, onesided=False, retain_graph=True):
     grad = _grad(input, output, retain_graph=retain_graph)
-    grad = grad.view(grad.size(0), -1)
-    grad_norm = grad.norm(2, dim=1)
+    grad = grad.view(grad.size(0), -1) #[n,c,h,w] -> [n,-1]
+    grad_norm = grad.norm(2, dim=1) # [n,-1] -> [n]
     if onesided:
         gp = torch.max(0, grad_norm - constraint)
     else:
         gp = (grad_norm - constraint) ** 2
-    return gamma * gp.mean()
+    return gamma * gp.mean() #以1为中心
 
 
 def _grad_reg(input, output, gamma, retain_graph=True):
     grad = _grad(input, output, retain_graph=retain_graph)
     grad = grad.view(grad.size(0), -1)
     gr = (grad ** 2).sum(1)
-    return (0.5 * gamma) * gr.mean()
+    return (0.5 * gamma) * gr.mean() #以0为中心，且是简化版
 
 
 def _pathreg(dlatents, fakes, pl_avg, pl_decay, gamma, retain_graph=True):
@@ -135,7 +134,6 @@ def D_r2(D,
         reg = _grad_reg(input=fakes, output=fake_scores, gamma=gamma, retain_graph=False).float()
     return loss, reg
 
-
 def D_logistic_r1(G,
                   D,
                   latents,
@@ -157,10 +155,8 @@ def D_logistic_r1(G,
     loss = real_loss + fake_loss
     reg = None
     if gamma:
-        reg = _grad_reg(
-            input=reals, output=real_scores, gamma=gamma, retain_graph=True).float()
+        reg = _grad_reg(input=reals, output=real_scores, gamma=gamma, retain_graph=True).float()
     return loss, reg
-
 
 def D_logistic_r2(G,
                   D,
@@ -183,8 +179,7 @@ def D_logistic_r2(G,
     loss = real_loss + fake_loss
     reg = None
     if gamma:
-        reg = _grad_reg(
-            input=fakes, output=fake_scores, gamma=gamma, retain_graph=True).float()
+        reg = _grad_reg(input=fakes, output=fake_scores, gamma=gamma, retain_graph=True).float()
     return loss, reg
 
 

@@ -17,35 +17,15 @@ except ImportError:
 
 from . import models, utils, loss_fns
 
-
 class Trainer:
     """
-    Class that handles training and logging for stylegan2.
-    For distributed training, the arguments `rank`, `world_size`,
-    `master_addr`, `master_port` can all be given as environmnet variables
-    (only difference is that the keys should be capital cased).
-    Environment variables if available will override any python
-    value for the same argument.
-    Arguments:
-        G (Generator): The generator model.
-        D (Discriminator): The discriminator model.
-        latent_size (int): The size of the latent inputs.
-        dataset (indexable object): The dataset. Has to implement
-            '__getitem__' and '__len__'. If `label_size` > 0, this
-            dataset object has to return both a data entry and its
+        dataset (indexable object): The dataset. Has to implement '__getitem__' and '__len__'. 
+            If `label_size` > 0, this dataset object has to return both a data entry and its
             label when calling '__getitem__'.
-        device (str, int, list, torch.device): The device to run training on.
-            Can be a list of integers for parallel training in the same
-            process. Parallel training can also be achieved by spawning
-            seperate processes and using the `rank` argument for each
-            process. In that case, only one device should be specified
-            per process.
         Gs (Generator, optional): A generator copy with the current
             moving average of the training generator. If not specified,
             a copy of the generator is made for the moving average of
             weights.
-        Gs_beta (float): The beta value for the moving average weights.
-            Default value is 1 / (2 ^(32 / 10000)).
         Gs_device (str, int, torch.device, optional): The device to store
             the moving average weights on. If using a different device
             than what is specified for the `device` argument, updating
@@ -53,43 +33,6 @@ class Trainer:
             will have to be transfered over different devices. If
             this argument is not specified, the same device is used
             as specified in the `device` argument.
-        batch_size (int): The total batch size to average gradients
-            over. This should be the combined batch size of all used
-            devices (it is later divided by world size for distributed
-            training).
-            Example: We want to average gradients over 32 data
-                entries. To do this we just set `batch_size=32`.
-                Even if we train on 8 GPUs we still use the same
-                batch size (each GPU will take 4 data entries per
-                batch).
-            Default value is 32.
-        device_batch_size (int): The number of data entries that can
-            fit on the specified device at a time.
-            Example: We want to average gradients over 32 data
-                entries. To do this we just set `batch_size=32`.
-                However, our device can only handle a batch of
-                4 at a time before running out of memory. We
-                therefor set `device_batch_size=4`. With a
-                single device (no distributed training), each
-                batch is split into 32 / 4 parts and gradients
-                are averaged over all these parts.
-            Default value is 4.
-        label_size (int, optional): Number of possible class labels.
-            This is required for conditioning the GAN with labels.
-            If not specified it is assumed that no labels are used.
-        data_workers (int): The number of spawned processes that
-            handle data loading. Default value is 4.
-        G_loss (str, callable): The loss function to use
-            for the generator. If string, it can be one of the
-            following: 'logistic', 'logistic_ns' or 'wgan'.
-            If not a string, the callable has to follow
-            the format of functions found in `stylegan2.loss`.
-            Default value is 'logistic_ns' (non-saturating logistic).
-        D_loss (str, callable): The loss function to use
-            for the discriminator. If string, it can be one of the
-            following: 'logistic' or 'wgan'.
-            If not a string, same restriction follows as for `G_loss`.
-            Default value is 'logistic'.
         G_reg (str, callable, None): The regularizer function to use
             for the generator. If string, it can only be 'pathreg'
             (pathlength regularization). A weight for the regularizer
@@ -106,45 +49,19 @@ class Trainer:
             higher than 1 indicates that regularization should only
             be performed at this interval (lazy regularization).
             Default value is 4.
-        G_opt_class (str, class): The optimizer class for the generator.
-            Default value is 'Adam'.
-        G_opt_kwargs (dict): Keyword arguments for the generator optimizer
-            constructor. Default value is {'lr': 2e-3, 'betas': (0, 0.99)}.
-        G_reg_batch_size (int): Same as `batch_size` but only for
-            the regularization loss of the generator. Default value
-            is 16.
-        G_reg_device_batch_size (int): Same as `device_batch_size`
-            but only for the regularization loss of the generator.
-            Default value is 2.
+        G_reg_batch_size (int): Same as `batch_size` but only for the regularization loss of the generator. Default value is 16.
         D_reg (str, callable, None): The regularizer function to use
             for the discriminator. If string, the following values
             can be used: 'r1', 'r2', 'gp'. See doc for `G_reg` for
             rest of info on regularizer format.
             Default value is 'r1:10'.
-        D_reg_interval (int): Same as `D_reg_interval` but for the
-            discriminator. Default value is 16.
-        D_opt_class (str, class): The optimizer class for the discriminator.
-            Default value is 'Adam'.
-        D_opt_kwargs (dict): Keyword arguments for the discriminator optimizer
-            constructor. Default value is {'lr': 2e-3, 'betas': (0, 0.99)}.
-        style_mix_prob (float): The probability of passing 2 latents instead of 1
-            to the generator during training. Default value is 0.9.
-        G_iter (int): Number of generator iterations for every full training
-            iteration. Default value is 1.
-        D_iter (int): Number of discriminator iterations for every full training
-            iteration. Default value is 1.
-        pl_avg (float, torch.Tensor): The average pathlength starting value for
-            pathlength regularization of the generator. Default value is 0.
-        tensorboard_log_dir (str, optional): A path to a directory to log training values
-            in for tensorboard. Only used without distributed training or when
-            distributed training is enabled and the rank of this trainer is 0.
-        checkpoint_dir (str, optional): A path to a directory to save training
-            checkpoints to. If not specified, not checkpoints are automatically
-            saved during training.
-        checkpoint_interval (int): The interval at which to save training checkpoints.
-            Default value is 10000.
-        seen (int): The number of previously trained iterations. Used for logging.
-            Default value is 0.
+        D_reg_interval (int): Same as `D_reg_interval` but for the discriminator. Default value is 16.
+        style_mix_prob (float): The probability of passing 2 latents instead of 1 to the generator during training. Default value is 0.9.
+        pl_avg (float, torch.Tensor): The average pathlength starting value for pathlength regularization of the generator. Default value is 0.
+        tensorboard_log_dir (str, optional): A path to a directory to log training values in for tensorboard. 
+        checkpoint_dir (str, optional): A path to a directory to save training checkpoints to. If not specified, not checkpoints are automatically saved during training.
+        checkpoint_interval (int): The interval at which to save training checkpoints. Default value is 10000.
+        seen (int): The number of previously trained iterations. Used for logging. Default value is 0.
         half (bool): Use mixed precision training. Default value is False.
     """
 
@@ -154,24 +71,24 @@ class Trainer:
                  latent_size, # latent_size (int): The size of the latent inputs.
                  dataset,
                  Gs=None,
-                 Gs_beta=0.5 ** (32 / 10000),
+                 Gs_beta=0.5 ** (32 / 10000),#Gs_beta (float): The beta value for the moving average weights. Default value is 1 / (2 ^(32 / 10000)).
                  Gs_device=None,
                  batch_size=32,
-                 label_size=0,
+                 label_size=0, # label_size (int, optional): Number of possible class labels. This is required for conditioning the GAN with labels.
                  data_workers=4,
-                 G_loss='logistic_ns',
-                 D_loss='logistic',
+                 G_loss='logistic_ns', #it can be one of the following: 'logistic', 'logistic_ns' or 'wgan'.(default is non-saturating logistic)
+                 D_loss='logistic', # it can be one of the following: 'logistic' or 'wgan'.
                  G_reg='pathreg:2',
                  G_reg_interval=4,
-                 G_opt_class='Adam',
-                 G_opt_kwargs={'lr': 2e-3, 'betas': (0, 0.99)},
+                 G_opt_class='Adam', #  G_opt_class (str, class): The optimizer class for the generator. Default value is 'Adam'.
+                 G_opt_kwargs={'lr': 2e-3, 'betas': (0, 0.99)}, #   G_opt_kwargs (dict): Keyword arguments for the generator optimizer constructor.
                  D_reg='r1:10',
                  D_reg_interval=16,
-                 D_opt_class='Adam',
+                 D_opt_class='Adam', #  D_opt_class (str, class): The optimizer class for the discriminator.
                  D_opt_kwargs={'lr': 2e-3, 'betas': (0, 0.99)},
                  style_mix_prob=0.9,
-                 G_iter=1,
-                 D_iter=1,
+                 G_iter=1, # Number of generator iterations for every full training
+                 D_iter=1, # Number of discriminator iterations for every full training
                  pl_avg=0.,
                  tensorboard_log_dir=None,
                  checkpoint_dir=None,
@@ -187,8 +104,7 @@ class Trainer:
         kwargs.pop('dataset') 
         kwargs.update(pl_avg=float(pl_avg)) # Some arguments may have to be turned into strings to be compatible with json.
         kwargs.update(device=str(self.device))
-        if isinstance(Gs_device, torch.device):
-            kwargs.update(device=str(Gs_device))
+        if isinstance(Gs_device, torch.device): kwargs.update(device=str(Gs_device))
         self.kwargs = kwargs
 
         # Set up the models
@@ -241,7 +157,7 @@ class Trainer:
         self.dataloader_iter = None
         self.prior_generator = utils.PriorGenerator(
             latent_size=latent_size,
-            label_size=label_size,
+            label_size=label_size, # None
             batch_size=self.batch_size,
             device=self.device
         )
@@ -330,10 +246,10 @@ class Trainer:
         for i in range(iterations):
             # Figure out if G and/or D be
             # regularized this iteration
-            G_reg = self.G_reg is not None
+            G_reg = self.G_reg is not None  #True
             if self.G_reg_interval and G_reg:
                 G_reg = self.seen % self.G_reg_interval == 0
-            D_reg = self.D_reg is not None
+            D_reg = self.D_reg is not None #True
             if self.D_reg_interval and D_reg:
                 D_reg = self.seen % self.D_reg_interval == 0
 
@@ -704,7 +620,7 @@ def build_opt(net, opt_class, opt_kwargs, reg, reg_interval):
             opt_kwargs['betas'] = (betas[0] ** mb_ratio, betas[1] ** mb_ratio)
     if isinstance(opt_class, str):
         opt_class = getattr(torch.optim, opt_class.title())
-    return opt_class(net.parameters(), **opt_kwargs)
+    return opt_class(net.parameters(), **opt_kwargs) # 直接通过访问属性获得对应文件夹下的类,通过__init__.py导入
 
 #----------------------------------------------------------------------------
 # Reg and loss function fetchers

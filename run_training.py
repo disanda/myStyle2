@@ -45,8 +45,7 @@ def get_models(args):
 
     if args.g_file:
         G = stylegan2.models.load(args.g_file)
-        assert isinstance(G, stylegan2.models.Generator), \
-                '`--g_file` should specify a generator model, found {}'.format(type(G))
+        assert isinstance(G, stylegan2.models.Generator), '`--g_file` should specify a generator model, found {}'.format(type(G))
     else:
 
         G_M = stylegan2.models.GeneratorMapping(
@@ -79,8 +78,7 @@ def get_models(args):
 
     if args.d_file:
         D = stylegan2.models.load(args.d_file)
-        assert isinstance(D, stylegan2.models.Discriminator), \
-                '`--d_file` should specify a discriminator model, found {}'.format(type(D))
+        assert isinstance(D, stylegan2.models.Discriminator), '`--d_file` should specify a discriminator model, found {}'.format(type(D))
     else:
         D = stylegan2.models.Discriminator(
             channels=args.d_channels or args.channels,
@@ -109,12 +107,7 @@ def get_models(args):
 def get_trainer(args):
     dataset = get_dataset(args)
     if args.resume and stylegan2.train._find_checkpoint(args.checkpoint_dir):
-        trainer = stylegan2.train.Trainer.load_checkpoint(
-            args.checkpoint_dir,
-            dataset,
-            device=args.device,
-            tensorboard_log_dir=args.tensorboard_log_dir
-        )
+        trainer = stylegan2.train.Trainer.load_checkpoint(args.checkpoint_dir, dataset, device=args.device, tensorboard_log_dir=args.tensorboard_log_dir)
     else:
         G, D = get_models(args)
         trainer = stylegan2.train.Trainer(
@@ -227,8 +220,7 @@ def run(args):
                 'be saved.'
             )
     if args.output:
-            assert os.path.isdir(args.output) or not os.path.splitext(args.output)[-1], \
-                '--output argument should specify a directory, not a file.'
+            assert os.path.isdir(args.output) or not os.path.splitext(args.output)[-1], '--output argument should specify a directory, not a file.'
     trainer = get_trainer(args)
     trainer.train(iterations=args.iterations)
     if not args.output:
@@ -240,7 +232,6 @@ def run(args):
 
 
 #----------------------------------------------------------------------------
-
 if __name__ == '__main__':
     config_file="./configs/my_settings.yaml"
     cfg = get_cfg_defaults()
