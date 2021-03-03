@@ -163,8 +163,7 @@ class Trainer:
         )
 
         self.tb_writer = None
-        if tensorboard_log_dir:
-            self.tb_writer = torch.utils.tensorboard.SummaryWriter(tensorboard_log_dir)
+        if tensorboard_log_dir: self.tb_writer = torch.utils.tensorboard.SummaryWriter(tensorboard_log_dir)
 
         self.label_size = label_size
         self.style_mix_prob = style_mix_prob
@@ -598,11 +597,9 @@ def _find_checkpoint(dir_path):
         return int(name.split('_')[0])
     def get_timestamp(name):
         return '_'.join(name.split('_')[1:])
-    # Python sort is stable, meaning that this sort operation
-    # will guarantee that the order of values after the first
-    # sort will stay for a set of values that have the same
-    # key value.
-    checkpoint_names = sorted(sorted(checkpoint_names, key=get_iteration), key=get_timestamp)
+    # Python sort is stable, meaning that this sort operation will guarantee that the order of values after the first
+    # sort will stay for a set of values that have the same key value.
+    checkpoint_names = sorted(sorted(checkpoint_names, key=get_iteration), key=get_timestamp) #按照迭代次数或时间排序
     return os.path.join(dir_path, checkpoint_names[-1])
 
 #----------------------------------------------------------------------------
@@ -636,6 +633,7 @@ _LOSS_FNS = {
         'wgan': loss_fns.D_wgan
     }
 }
+
 def get_loss_fn(net, loss):
     if callable(loss):
         return loss

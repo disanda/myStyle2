@@ -106,7 +106,7 @@ def get_models(args):
 
 def get_trainer(args):
     dataset = get_dataset(args)
-    if args.resume and stylegan2.train._find_checkpoint(args.checkpoint_dir):
+    if args.resume and stylegan2.train._find_checkpoint(args.checkpoint_dir): #继承预训练模型
         trainer = stylegan2.train.Trainer.load_checkpoint(args.checkpoint_dir, dataset, device=args.device, tensorboard_log_dir=args.tensorboard_log_dir)
     else:
         G, D = get_models(args)

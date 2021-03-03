@@ -3,8 +3,9 @@
 batch_size : 20
 data_resize : True
 data_dir: '/_yucheng/dataSet/CelebAMask-HQ/CelebAMask-HQ/CelebA-HQ-img'
-tensorboard_log_dir : './runs/stylegan2_512x512'
+tensorboard_log_dir : './runs_2020_mar03/stylegan2_512x512'
 tensorboard_image_interval : 100
+output: './runs_2020_mar03'
 checkpoint_dir : './checkpoints/stylegan2_512x512'
 checkpoint_interval : 1000
 
