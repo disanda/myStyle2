@@ -485,8 +485,8 @@ class Trainer:
                 image = utils.stack_images_PIL(images, individual_img_size=resize)
                 image = torchvision.transforms.ToTensor()(image)
                 self.tb_writer.add_image(name, image, self.seen)
-                image2 = utils.stack_images_PIL(images)
-                image2.save('./runs/%d.png'%(self.seen))
+                image2 = utils.stack_images_PIL(images) 
+                image2.save('./runs/%d.png'%(self.seen)) #将图片保存到指定文件夹
         self.callbacks.append(callback)
 
     def save_checkpoint(self, dir_path):
@@ -600,7 +600,9 @@ def _find_checkpoint(dir_path):
     # Python sort is stable, meaning that this sort operation will guarantee that the order of values after the first
     # sort will stay for a set of values that have the same key value.
     checkpoint_names = sorted(sorted(checkpoint_names, key=get_iteration), key=get_timestamp) #按照迭代次数或时间排序
-    return os.path.join(dir_path, checkpoint_names[-1])
+    x = os.path.join(dir_path, checkpoint_names[-1])
+    print(x)
+    return x
 
 #----------------------------------------------------------------------------
 # Reg and loss function fetchers

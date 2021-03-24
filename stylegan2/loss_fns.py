@@ -7,8 +7,7 @@ from . import utils
 
 def _grad(input, output, retain_graph):
     # https://discuss.pytorch.org/t/gradient-penalty-loss-with-modified-weights/64910
-    # Currently not possible to not
-    # retain graph for regularization losses.
+    # Currently not possible to not retain graph for regularization losses.
     # Ugly hack is to always set it to True.
     retain_graph = True
     grads = torch.autograd.grad(

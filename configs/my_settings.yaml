@@ -1,5 +1,3 @@
-
-
 batch_size : 20
 data_resize : True
 data_dir: '/_yucheng/dataSet/CelebAMask-HQ/CelebAMask-HQ/CelebA-HQ-img'

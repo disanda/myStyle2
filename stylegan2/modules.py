@@ -471,7 +471,8 @@ class ConvLayer(nn.Module): #modulated (style mod), normalize. by modifying conv
     def forward(self, input, latent=None, **kwargs):
         weight = self.weight
         if self.weight_coef != 1: weight = self.weight_coef * weight
-        if self.modulate: return self.forward_mod(input=input, latent=latent, weight=weight)
+        if self.modulate: 
+            return self.forward_mod(input=input, latent=latent, weight=weight)
         return self._process(input=input, weight=weight)
 
     def _process(self, input, weight, **kwargs): #Pad input and convolve it returning the result.

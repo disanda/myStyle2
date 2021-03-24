@@ -4,9 +4,9 @@ import torch
 from torch import multiprocessing as mp
 import stylegan2
 from stylegan2 import utils
-from stylegan2.external_models import inception, lpips
-from stylegan2.metrics import fid, ppl
-from defaults import get_cfg_defaults
+from external_models import inception, lpips
+from metrics import fid, ppl
+from configs.defaults import get_cfg_defaults
 
 #----------------------------------------------------------------------------
 
@@ -16,11 +16,11 @@ def get_dataset(args):
     dataset = utils.ImageFolder(
         args.data_dir,
         mirror=args.mirror_augment,
-        pixel_min=args.pixel_min,
-        pixel_max=args.pixel_max,
+        pixel_min=args.pixel_min, # -1
+        pixel_max=args.pixel_max, # 1
         height=height,
         width=width,
-        resize=args.data_resize,
+        resize=args.data_resize, # True
         grayscale=args.data_channels == 1
     )
     assert len(dataset), 'No images found at {}'.format(args.data_dir)
@@ -135,20 +135,10 @@ def get_trainer(args):
             half=args.half,
         )
     if args.fid_interval:
-        fid_model = inception.InceptionV3FeatureExtractor(
-            pixel_min=args.pixel_min, pixel_max=args.pixel_max)
-        trainer.register_metric(
-            name='FID (299x299)',
-            eval_fn=fid.FID(
-                trainer.Gs,
-                trainer.prior_generator,
-                dataset=dataset,
-                fid_model=fid_model,
-                fid_size=299,
-                reals_batch_size=64
-            ),
-            interval=args.fid_interval
-        )
+        fid_model = inception.InceptionV3FeatureExtractor(pixel_min=args.pixel_min, pixel_max=args.pixel_max)
+        trainer.register_metric(name='FID (299x299)',
+            eval_fn=fid.FID(trainer.Gs,trainer.prior_generator,dataset=dataset,fid_model=fid_model,fid_size=299,reals_batch_size=64),
+            interval=args.fid_interval)
         trainer.register_metric(
             name='FID',
             eval_fn=fid.FID(
@@ -211,14 +201,9 @@ def get_trainer(args):
     return trainer
 
 #----------------------------------------------------------------------------
-
 def run(args):
     if not (args.checkpoint_dir or args.output):
-            warnings.warn(
-                'Neither an output path or checkpoint dir has been ' + \
-                'given. Weights from this training run will never ' + \
-                'be saved.'
-            )
+            warnings.warn('Neither an output path or checkpoint dir has been given. Weights from this training run will never be saved.')
     if args.output:
             assert os.path.isdir(args.output) or not os.path.splitext(args.output)[-1], '--output argument should specify a directory, not a file.'
     trainer = get_trainer(args)
@@ -229,7 +214,6 @@ def run(args):
             os.makedirs(args.output)
         for model_name in ['G', 'D', 'Gs']:
             getattr(trainer, model_name).save(os.path.join(args.output_dir, model_name + '.pth'))
-
 
 #----------------------------------------------------------------------------
 if __name__ == '__main__':

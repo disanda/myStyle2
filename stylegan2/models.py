@@ -520,8 +520,7 @@ class Discriminator(_BaseAdverserialModel): #The discriminator scores data input
             weight_scale=self.weight_scale,
             gain=1,
             dim=self.dim,
-            eps=self.eps
-        )
+            eps=self.eps)
         self.conv_blocks = nn.ModuleList()
 
         for i in range(len(self.channels) - 1): #创建除了头和尾的中间block
@@ -529,10 +528,7 @@ class Discriminator(_BaseAdverserialModel): #The discriminator scores data input
                 modules.DiscriminatorConvBlock(
                     in_channels=self.channels[i],
                     out_channels=self.channels[i + 1],
-                    **conv_block_kwargs
-                )
-            )
-
+                    **conv_block_kwargs))
         final_conv_block = [] #这一层只有一个conv
         if self.mbstd_group_size: #minibatch std layer.
             final_conv_block.append(modules.MinibatchStd(group_size=self.mbstd_group_size, eps=self.eps))
@@ -548,9 +544,7 @@ class Discriminator(_BaseAdverserialModel): #The discriminator scores data input
                 },
             )
         )
-        self.conv_blocks.append(nn.Sequential(*final_conv_block))
-
-# If not using the skip architecture, only one layer will project the data into feature maps.
+        self.conv_blocks.append(nn.Sequential(*final_conv_block)) # If not using the skip architecture, only one layer will project the data into feature maps.
         self.from_data_layers = nn.ModuleList()
         for i in range(len(self.channels)):
             from_data = None        # This would be performed only for the input data at the first block.
@@ -584,8 +578,7 @@ class Discriminator(_BaseAdverserialModel): #The discriminator scores data input
                 filter_pad_mode=self.filter_pad_mode,
                 filter_pad_constant=self.filter_pad_constant,
                 gain=1,
-                dim=self.dim
-            ) # self.downsample赋值为一个下采样层
+                dim=self.dim) # self.downsample赋值为一个下采样层
 
         # The final layers are two dense layers that maps the features into score logits. 
         dense_layers = [] ## If labels are used, we instead output one score for each possible class of the labels and then return the score for the labeled class.
