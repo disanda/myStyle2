@@ -4,9 +4,9 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from .. import models, utils
-from ..external_models import lpips
-
+import stylegan2.models as models
+import stylegan2.utils as utils
+import external_models.lpips as lpips
 
 class PPL:
     """
