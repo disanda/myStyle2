@@ -5,7 +5,8 @@ from torch import multiprocessing as mp
 import stylegan2
 from stylegan2 import utils
 from external_models import inception, lpips
-from metrics import fid, ppl
+import metrics.fid as fid
+import metrics.ppl as ppl
 from configs.defaults import get_cfg_defaults
 
 #----------------------------------------------------------------------------
