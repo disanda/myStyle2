@@ -1,4 +1,4 @@
-batch_size : 20
+batch_size : 10
 data_resize : True
 #data_dir: '/_yucheng/dataSet/CelebAMask-HQ/CelebAMask-HQ/CelebA-HQ-img'
 data_dir: '/home/disanda/Desktop/dataSet/CelebAMask-HQ/img-30000/CelebA-HQ-img/'
