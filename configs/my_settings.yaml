@@ -1,4 +1,4 @@
-batch_size : 10
+batch_size : 12 # modules.py -> line: 378 -> group size 4
 data_resize : True
 #data_dir: '/_yucheng/dataSet/CelebAMask-HQ/CelebAMask-HQ/CelebA-HQ-img'
 data_dir: '/home/disanda/Desktop/dataSet/CelebAMask-HQ/img-30000/CelebA-HQ-img/'
