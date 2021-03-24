@@ -2,7 +2,8 @@ import warnings
 import os
 import torch
 from torch import multiprocessing as mp
-import stylegan2
+import stylegan2.train
+import stylegan2.model
 from stylegan2 import utils
 from external_models import inception, lpips
 import metrics.fid as fid
